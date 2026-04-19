@@ -4,6 +4,149 @@ _Last updated: 2026-04-19_
 
 ---
 
+## Update 7 — Complete guide flow: view → contact → review → book (2026-04-19)
+
+Tourists can now do every step of engaging a guide end-to-end:
+
+1. **View** a guide's full profile at `/guides/:id` — bio, languages, specialties, rate, verified badge, rating stars, all reviews
+2. **Contact** via the existing Message button (unchanged — routes to `/messages/:id`)
+3. **Review** a guide they've worked with (1–5 stars + comment, editable, one per tourist per guide)
+4. **Book** a guide with a date + hours + notes → guide approves/declines → tourist or guide can cancel → guide marks complete
+
+Guides see incoming booking requests on their dashboard with Accept / Decline buttons, and both sides get a dedicated `/bookings` page.
+
+### Try it (credentials — all passwords `password123`)
+
+| To see… | Log in as |
+|---|---|
+| Book a guide for the first time | `elena@example.com` (tourist) → go to `/guides` → open any guide → Book |
+| An inbox of booking requests + accept/decline | `priya@example.com` (guide) → Dashboard shows 3 pending/accepted bookings |
+| Ratings and reviews in action | `priya@example.com` (guide) has 3 reviews (avg 4.7★); `alex@example.com` has 2 (avg 4.5★) |
+| Booking in "completed" state | make one in UI or use the API |
+
+### What was built
+
+**Database** — [db/bookings.sql](db/bookings.sql)
+
+```sql
+guide_reviews (id, guide_id FK users, tourist_id FK users, rating 1-5,
+               comment, created_at, UNIQUE(guide_id, tourist_id))
+
+bookings (id, tourist_id FK, guide_id FK, booking_date DATE, hours DECIMAL(4,1),
+          notes, status ENUM('pending','accepted','declined','completed','cancelled'),
+          total_price DECIMAL(10,2), created_at, updated_at)
+```
+
+Cascading FKs on both tables (delete a user → their reviews & bookings go too). UNIQUE(guide_id, tourist_id) on `guide_reviews` — one tourist can only have one review per guide (updates on repost).
+
+**Backend** — [server/routes/guides.js](server/routes/guides.js) expanded + [server/routes/bookings.js](server/routes/bookings.js) (new)
+
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/guides` | public | Now includes `avg_rating` + `review_count` per guide |
+| GET | `/api/guides/:id` | public (richer with auth) | Full profile + all reviews. Phone/email omitted for unauthenticated viewers |
+| POST | `/api/guides/:id/reviews` | Bearer + role=tourist | Create or update tourist's review for this guide. 1-5 star validation. 400 on self-review |
+| POST | `/api/bookings` | Bearer + role=tourist | Create a booking. Auto-computes `total_price = hourly_rate × hours` if rate is set |
+| GET | `/api/bookings` | Bearer (tourist OR guide) | Returns current user's bookings from their perspective (outgoing for tourists, incoming for guides) |
+| PUT | `/api/bookings/:id/status` | Bearer (participant only) | State machine enforced server-side: only certain transitions are legal per role |
+
+**Booking state machine**
+| Current | Tourist can → | Guide can → |
+|---|---|---|
+| `pending` | cancelled | accepted, declined |
+| `accepted` | cancelled | completed, cancelled |
+| `declined` | — | — |
+| `completed` | — | — |
+| `cancelled` | — | — |
+
+**Frontend**
+
+- [client/src/components/GuideProfile.js](client/src/components/GuideProfile.js) — `/guides/:id` page with:
+  - Big header: avatar, name, verified pill, location, rating with stars, hourly rate chip
+  - "About" section (bio + languages + specialties)
+  - Inline booking card with date/hours/notes and live total calculation
+  - Review section with "Write a review" form (tourists), review list, and stars
+- [client/src/components/MyBookings.js](client/src/components/MyBookings.js) — `/bookings` route
+  - Works for both tourists and guides: same component flips labels & actions based on role
+  - Color-coded left borders per status (yellow = pending, green = accepted, purple = completed, etc.)
+  - Role-appropriate action buttons: tourist sees "Cancel" when pending/accepted; guide sees "Accept / Decline" when pending, "Mark complete / Cancel" when accepted
+- [client/src/components/GuideDashboard.js](client/src/components/GuideDashboard.js) — replaced placeholder stats with real data:
+  - Stat cards now show actual **Pending requests**, **Confirmed/done**, and **Rating** (from `guide_reviews`)
+  - New "Booking requests" section with up to 5 most-recent bookings + inline Accept/Decline
+- [client/src/components/GuidesDirectory.js](client/src/components/GuidesDirectory.js) — cards now link to detail page, show rating, and have both "Message" and "View profile" actions
+- [client/src/components/Navbar.js](client/src/components/Navbar.js) — new `📅 Bookings` link for tourists, `📅 Requests` for guides
+- [client/src/App.js](client/src/App.js) — new routes: `/guides/:id` (public) and `/bookings` (auth-required)
+- [client/src/index.css](client/src/index.css) — ~290 lines for the new views
+
+### Status: ✅ Done and verified
+
+| Area | Status |
+|---|---|
+| DB schema + FKs + state enum | ✅ `guide_reviews` + `bookings` created |
+| API endpoints | ✅ 6 new (2 on guides router, 3 on bookings, 1 extended) |
+| Frontend pages | ✅ `/guides/:id`, `/bookings`, dashboard rewired |
+| Role gating | ✅ Reviews + bookings: tourist-only; status changes: participant-only with legal-transition check |
+| Seed data | ✅ 9 reviews across 4 guides, 4 bookings across multiple statuses |
+| CSS | ✅ Profile header, booking form, bookings list with status colors |
+
+### Tests run
+
+| # | Scenario | Expected | Result |
+|---|---|---|---|
+| 1 | `GET /api/guides` | includes `avg_rating` + `review_count` | ✅ Alex 4.5★ (2), Priya 4.7★ (3), Marie 4.5★ (2), Keshav 5.0★ (1) |
+| 2 | `GET /api/guides/12` | Priya's full profile + 3 reviews | ✅ |
+| 3 | `POST /api/guides/7/reviews` (Maya reviewing herself) | 404 (Maya isn't a guide) | ✅ |
+| 4 | `POST /api/bookings` as guide | 403 `"requires role: tourist"` | ✅ |
+| 5 | `POST /api/bookings` as tourist (valid) | 201 with booking id, `total_price` auto-computed | ✅ |
+| 6 | `PUT /api/bookings/:id/status {accepted}` as tourist on own booking | 400 (illegal transition for tourist) | ✅ `"cannot change status from accepted to accepted as tourist"` |
+| 7 | `PUT /api/bookings/:id/status {cancelled}` as tourist (accepted→cancelled) | 200 | ✅ |
+| 8 | `PUT /api/bookings/:id/status` by non-participant | 403 | ✅ (covered by participant check) |
+| 9 | Client compiles cleanly with all new components | ✅ | ✅ |
+
+### Seed data summary
+
+**Reviews (9 total):**
+- Priya: 3 reviews (4.7★ avg)
+- Alex: 2 reviews (4.5★ avg)
+- Marie: 2 reviews (4.5★ avg)
+- Keshav: 1 review (5.0★)
+
+**Bookings (4 total, for Priya's dashboard):**
+- `pending` – Sophie, 2026-05-20, 6h, $150
+- `pending` – Aarav, 2026-06-10, 10h, $250
+- `accepted` – Maya, 2026-07-01, 4h, $100
+- `cancelled` – Maya, 2026-05-12, 8h, $200 (from an earlier test)
+
+### Walk-through (tourist point of view)
+
+1. Log in as `elena@example.com` / `password123`
+2. Click **Find a Guide** → see guide cards now show ratings (e.g. Marie 4.5★)
+3. Click Marie's card (or "View profile") → lands on `/guides/16` with her full bio, Louvre + Montmartre specialties, 2 reviews
+4. Click **Book Marie** → pick a date, enter 5 hours, note "bundled Louvre + Montmartre please", see "$350 = 5h × $70"
+5. Click **Send booking request** → success banner + link to **View my bookings**
+6. Go to `/bookings` → see your new booking as `pending` with Cancel button
+7. Click **Write a review** for Marie (under Reviews section on her profile) → leave 5★ + comment → appears at top of reviews list, and her average rating goes up
+8. Also **Message Marie** from her profile → lands in `/messages/:id` (existing feature)
+
+### Walk-through (guide point of view)
+
+1. Log in as `priya@example.com` / `password123`
+2. Auto-redirected to `/dashboard`
+3. Top stats now show **2 Pending requests**, **1 Confirmed**, **4.7★ rating (3 reviews)** — all live data
+4. Scroll down: **Booking requests** section lists bookings with **Accept / Decline** buttons inline
+5. Click **Accept** on Sophie's 6h request → it flips to `accepted` instantly
+6. Click **📅 Requests** in the navbar for the full list
+
+### What this unlocks next
+
+- Payment flow: Stripe on the booking acceptance transition
+- Calendar availability: new `guide_availability` table keyed by `(user_id, date)`
+- Email / push notifications (guide hears about new booking, tourist hears about acceptance)
+- Booking-scoped chat (thread auto-linked to the booking so communication has context)
+- Only allow reviews after a `completed` booking (currently any tourist can review any guide — deliberate for easier testing)
+
+---
+
 ## Update 6 — Favorites / Bookmarks (2026-04-19)
 
 Tourists can save places to come back to later. Heart icon on every place card and place detail page; a new `/favorites` route lists all saved places.

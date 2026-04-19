@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const EMPTY_PROFILE = {
@@ -17,11 +18,21 @@ export default function GuideDashboard() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState('');
+    const [bookings, setBookings] = useState([]);
+    const [guideMeta, setGuideMeta] = useState(null); // avg_rating, review_count
 
     const authHeaders = useCallback(() => ({
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
     }), [token]);
+
+    const loadBookings = useCallback(async () => {
+        try {
+            const res = await fetch('/api/bookings', { headers: authHeaders() });
+            const data = await res.json();
+            if (res.ok) setBookings(data);
+        } catch { /* non-fatal for dashboard */ }
+    }, [authHeaders]);
 
     useEffect(() => {
         let cancelled = false;
@@ -40,6 +51,15 @@ export default function GuideDashboard() {
                         phone: data.profile.phone || '',
                     });
                 }
+                // Also fetch own public profile for aggregate rating/review count.
+                if (user?.id) {
+                    const metaRes = await fetch(`/api/guides/${user.id}`);
+                    if (metaRes.ok) {
+                        const metaData = await metaRes.json();
+                        if (!cancelled) setGuideMeta(metaData.guide);
+                    }
+                }
+                loadBookings();
             } catch (err) {
                 if (!cancelled) setError(err.message);
             } finally {
@@ -48,7 +68,21 @@ export default function GuideDashboard() {
         }
         load();
         return () => { cancelled = true; };
-    }, [authHeaders]);
+    }, [authHeaders, user?.id, loadBookings]);
+
+    const updateBooking = async (id, status) => {
+        try {
+            const res = await fetch(`/api/bookings/${id}/status`, {
+                method: 'PUT',
+                headers: authHeaders(),
+                body: JSON.stringify({ status }),
+            });
+            if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+            loadBookings();
+        } catch (err) {
+            alert(err.message);
+        }
+    };
 
     const handleChange = (field) => (e) => {
         setProfile((p) => ({ ...p, [field]: e.target.value }));
@@ -100,20 +134,63 @@ export default function GuideDashboard() {
 
             <section className="dashboard-stats">
                 <div className="stat-card">
-                    <div className="stat-value">0</div>
-                    <div className="stat-label">Inquiries</div>
-                    <div className="stat-note">Coming with contact feature</div>
+                    <div className="stat-value">{bookings.filter(b => b.status === 'pending').length}</div>
+                    <div className="stat-label">Pending requests</div>
+                    <div className="stat-note">Awaiting your response</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">0</div>
-                    <div className="stat-label">Bookings</div>
-                    <div className="stat-note">Coming with booking feature</div>
+                    <div className="stat-value">{bookings.filter(b => ['accepted', 'completed'].includes(b.status)).length}</div>
+                    <div className="stat-label">Confirmed / done</div>
+                    <div className="stat-note">Accepted + completed</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">—</div>
+                    <div className="stat-value">{guideMeta?.avg_rating ? Number(guideMeta.avg_rating).toFixed(1) : '—'}</div>
                     <div className="stat-label">Rating</div>
-                    <div className="stat-note">Coming with reviews</div>
+                    <div className="stat-note">{guideMeta?.review_count || 0} reviews</div>
                 </div>
+            </section>
+
+            <section className="dashboard-section">
+                <div className="section-head-row">
+                    <h2 className="section-heading">Booking requests</h2>
+                    <Link to="/bookings" className="btn-secondary" style={{ textDecoration: 'none', fontSize: '0.85rem' }}>
+                        Full list →
+                    </Link>
+                </div>
+                {bookings.length === 0 ? (
+                    <p style={{ color: '#94a3b8' }}>No bookings yet. Once your profile is complete and verified, tourists can book you.</p>
+                ) : (
+                    <ul className="booking-list booking-list-compact">
+                        {bookings.slice(0, 5).map((b) => (
+                            <li key={b.id} className={`booking-item bk-${b.status}`}>
+                                <div className="booking-main">
+                                    <div className="booking-who">
+                                        <div className="booking-other">🧳 {b.tourist_name}</div>
+                                        <div className="booking-sub mono">{b.tourist_email}</div>
+                                    </div>
+                                    <div className="booking-date">
+                                        <div className="booking-date-main">{new Date(b.booking_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</div>
+                                        <div className="booking-sub">{b.hours}h{b.total_price != null ? ` · $${Number(b.total_price).toFixed(2)}` : ''}</div>
+                                    </div>
+                                    <span className={`bk-status bk-status-${b.status}`}>{b.status}</span>
+                                </div>
+                                {b.notes && <div className="booking-notes">“{b.notes}”</div>}
+                                {b.status === 'pending' && (
+                                    <div className="booking-actions">
+                                        <button className="admin-btn-primary" onClick={() => updateBooking(b.id, 'accepted')}>Accept</button>
+                                        <button className="admin-btn-danger" onClick={() => updateBooking(b.id, 'declined')}>Decline</button>
+                                    </div>
+                                )}
+                                {b.status === 'accepted' && (
+                                    <div className="booking-actions">
+                                        <button className="admin-btn-primary" onClick={() => updateBooking(b.id, 'completed')}>Mark complete</button>
+                                        <button className="admin-btn-danger" onClick={() => updateBooking(b.id, 'cancelled')}>Cancel</button>
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </section>
 
             <section className="dashboard-section">
@@ -201,10 +278,10 @@ export default function GuideDashboard() {
             <section className="dashboard-section coming-soon">
                 <h2 className="section-heading">Coming soon</h2>
                 <ul className="coming-list">
-                    <li>📬 Direct messages from tourists</li>
-                    <li>📅 Booking requests and calendar</li>
-                    <li>⭐ Verified reviews from past clients</li>
-                    <li>💳 Payment handling</li>
+                    <li>📅 Availability calendar</li>
+                    <li>💳 Payment handling (Stripe)</li>
+                    <li>📈 Earnings dashboard</li>
+                    <li>🌐 Shareable profile link</li>
                 </ul>
             </section>
         </div>

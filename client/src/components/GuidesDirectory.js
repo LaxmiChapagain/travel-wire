@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function GuidesDirectory() {
@@ -83,7 +83,7 @@ export default function GuidesDirectory() {
             <div className="guides-grid">
                 {guides.map((g) => (
                     <article key={g.id} className="guide-card">
-                        <div className="guide-card-top">
+                        <Link to={`/guides/${g.id}`} className="guide-card-top guide-card-link">
                             <div className="guide-avatar">{(g.name || '?').split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase()}</div>
                             <div className="guide-card-head">
                                 <h2 className="guide-name">
@@ -91,8 +91,13 @@ export default function GuidesDirectory() {
                                     {g.verified ? <span className="verified-pill" title="Verified by Travel Wire"> ✓ Verified</span> : null}
                                 </h2>
                                 <div className="guide-location">📍 {g.location || 'Location not set'}</div>
+                                {g.avg_rating ? (
+                                    <div className="guide-card-rating">
+                                        ★ {Number(g.avg_rating).toFixed(1)} <span style={{ color: '#64748b' }}>({g.review_count} reviews)</span>
+                                    </div>
+                                ) : null}
                             </div>
-                        </div>
+                        </Link>
                         <p className="guide-bio">{g.bio || <em style={{ color: '#64748b' }}>No bio yet.</em>}</p>
                         <dl className="guide-meta">
                             {g.languages && <><dt>Languages</dt><dd>{g.languages}</dd></>}
@@ -131,23 +136,38 @@ export default function GuidesDirectory() {
                             </div>
                         ) : (
                             canMessage && (
-                                <button
-                                    type="button"
-                                    className="auth-submit guide-card-cta"
-                                    onClick={() => openContactFor(g.id)}
-                                >
-                                    💬 Message {g.name.split(' ')[0]}
-                                </button>
+                                <div className="guide-card-actions">
+                                    <button
+                                        type="button"
+                                        className="auth-submit guide-card-cta"
+                                        onClick={() => openContactFor(g.id)}
+                                    >
+                                        💬 Message
+                                    </button>
+                                    <Link to={`/guides/${g.id}`} className="btn-secondary guide-card-cta" style={{ textDecoration: 'none', textAlign: 'center' }}>
+                                        View profile →
+                                    </Link>
+                                </div>
                             )
                         )}
                         {!isAuthenticated && (
-                            <button
-                                type="button"
-                                className="btn-secondary guide-card-cta"
-                                onClick={() => navigate('/login', { state: { from: '/guides' } })}
-                            >
-                                Log in to message
-                            </button>
+                            <div className="guide-card-actions">
+                                <Link to={`/guides/${g.id}`} className="auth-submit guide-card-cta" style={{ textDecoration: 'none', textAlign: 'center' }}>
+                                    View profile →
+                                </Link>
+                                <button
+                                    type="button"
+                                    className="btn-secondary guide-card-cta"
+                                    onClick={() => navigate('/login', { state: { from: '/guides' } })}
+                                >
+                                    Log in to message
+                                </button>
+                            </div>
+                        )}
+                        {isAuthenticated && user?.role === 'guide' && (
+                            <Link to={`/guides/${g.id}`} className="btn-secondary guide-card-cta" style={{ textDecoration: 'none', textAlign: 'center' }}>
+                                View profile →
+                            </Link>
                         )}
                     </article>
                 ))}

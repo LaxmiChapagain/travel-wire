@@ -95,6 +95,13 @@ export default function Navbar() {
                             </Link>
                         </li>
                     )}
+                    {isAuthenticated && (user?.role === 'tourist' || user?.role === 'guide') && (
+                        <li>
+                            <Link to="/bookings" className={location.pathname === '/bookings' ? 'active' : ''}>
+                                📅 {user?.role === 'guide' ? 'Requests' : 'Bookings'}
+                            </Link>
+                        </li>
+                    )}
                     {isAuthenticated && (
                         <li>
                             <Link to="/messages" className={location.pathname.startsWith('/messages') ? 'active' : ''}>

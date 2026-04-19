@@ -13,6 +13,8 @@ import Messages from './components/Messages';
 import ConversationView from './components/ConversationView';
 import AdminPanel from './components/AdminPanel';
 import FavoritesPage from './components/FavoritesPage';
+import GuideProfile from './components/GuideProfile';
+import MyBookings from './components/MyBookings';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { FavoritesProvider } from './context/FavoritesContext';
@@ -39,6 +41,15 @@ export default function App() {
               }
             />
             <Route path="/guides" element={<GuidesDirectory />} />
+            <Route path="/guides/:id" element={<GuideProfile />} />
+            <Route
+              path="/bookings"
+              element={
+                <ProtectedRoute>
+                  <MyBookings />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/messages"
               element={
