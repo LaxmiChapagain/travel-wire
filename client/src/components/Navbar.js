@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const COUNTRIES = [
     { code: 'NP', name: 'Nepal', flag: '🇳🇵' },
@@ -10,8 +11,12 @@ const COUNTRIES = [
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const dropdownRef = useRef(null);
+    const userMenuRef = useRef(null);
+    const { isAuthenticated, user, logout } = useAuth();
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 50);
@@ -25,6 +30,9 @@ export default function Navbar() {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
                 setDropdownOpen(false);
             }
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+                setUserMenuOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
@@ -33,7 +41,18 @@ export default function Navbar() {
     // Close dropdown on route change
     useEffect(() => {
         setDropdownOpen(false);
+        setUserMenuOpen(false);
     }, [location]);
+
+    const handleLogout = () => {
+        logout();
+        setUserMenuOpen(false);
+        navigate('/');
+    };
+
+    const initials = user?.name
+        ? user.name.trim().split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase()
+        : '';
 
     return (
         <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
@@ -71,6 +90,38 @@ export default function Navbar() {
                             ))}
                         </div>
                     </li>
+                    {isAuthenticated ? (
+                        <li className="nav-dropdown nav-user" ref={userMenuRef}>
+                            <button
+                                className="nav-user-trigger"
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                aria-expanded={userMenuOpen}
+                            >
+                                <span className="nav-user-avatar">{initials || '👤'}</span>
+                                <span className="nav-user-name">{user?.name}</span>
+                                <span className={`dropdown-arrow ${userMenuOpen ? 'open' : ''}`}>▾</span>
+                            </button>
+                            <div className={`nav-dropdown-menu ${userMenuOpen ? 'open' : ''}`}>
+                                <div className="nav-user-email">{user?.email}</div>
+                                <button className="nav-dropdown-item nav-logout" onClick={handleLogout}>
+                                    Log out
+                                </button>
+                            </div>
+                        </li>
+                    ) : (
+                        <>
+                            <li>
+                                <Link to="/login" className={location.pathname === '/login' ? 'active' : ''}>
+                                    Log in
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/register" className="nav-cta">
+                                    Sign up
+                                </Link>
+                            </li>
+                        </>
+                    )}
                 </ul>
             </div>
         </nav>

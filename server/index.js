@@ -10,6 +10,7 @@ const reviewsRouter = require('./routes/reviews');
 const categoriesRouter = require('./routes/categories');
 const uploadsRouter = require('./routes/uploads');
 const countriesRouter = require('./routes/countries');
+const authRouter = require('./routes/auth');
 
 const app = express();
 app.use(cors());
@@ -25,6 +26,7 @@ app.use('/api/places', placesRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/countries', countriesRouter);
+app.use('/api/auth', authRouter);
 app.use('/api', uploadsRouter);
 
 // Health check endpoint
