@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import FavoriteButton from './FavoriteButton';
 
 const COUNTRY_IMAGES = {
     NP: '/images/nepal.jpg',
@@ -139,6 +140,7 @@ export default function CountryPage() {
                                             ⭐ {place.avg_rating}
                                         </span>
                                     )}
+                                    <FavoriteButton placeId={place.id} />
                                 </div>
                                 <div className="place-card-body">
                                     <h3 className="place-card-title">{place.name}</h3>

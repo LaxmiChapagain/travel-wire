@@ -12,12 +12,15 @@ import GuidesDirectory from './components/GuidesDirectory';
 import Messages from './components/Messages';
 import ConversationView from './components/ConversationView';
 import AdminPanel from './components/AdminPanel';
+import FavoritesPage from './components/FavoritesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import { FavoritesProvider } from './context/FavoritesContext';
 
 export default function App() {
   return (
     <AuthProvider>
+      <FavoritesProvider>
       <div className="page-wrapper">
         <Navbar />
         <main className="main-content">
@@ -60,10 +63,19 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/favorites"
+              element={
+                <ProtectedRoute role="tourist">
+                  <FavoritesPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
         <Footer />
       </div>
+      </FavoritesProvider>
     </AuthProvider>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReviewForm from './ReviewForm';
+import FavoriteButton from './FavoriteButton';
 
 export default function PlaceDetail() {
   const { id } = useParams();
@@ -82,6 +83,9 @@ export default function PlaceDetail() {
               <div>
                 <h1 className="place-detail-title">{place.name}</h1>
                 <p className="place-detail-location">📍 {place.city}, {place.country}</p>
+                <div style={{ marginTop: '0.75rem' }}>
+                  <FavoriteButton placeId={place.id} variant="inline" />
+                </div>
               </div>
               <div className="place-detail-rating-box">
                 <div className="place-detail-rating-number">

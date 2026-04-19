@@ -4,6 +4,104 @@ _Last updated: 2026-04-19_
 
 ---
 
+## Update 6 — Favorites / Bookmarks (2026-04-19)
+
+Tourists can save places to come back to later. Heart icon on every place card and place detail page; a new `/favorites` route lists all saved places.
+
+### Try it
+
+Log in as any tourist (e.g. `maya@example.com` / `password123`). You'll see a hollow ♡ on every place card. Click it → it turns red ♥ with a pop animation, and the place appears on `/favorites` (new link in the navbar).
+
+**Pre-seeded:**
+- Maya has 5 favorites (Everest BC, Pashupatinath, Phewa Lake, Grand Canyon, Eiffel Tower)
+- John has 3 favorites (Statue of Liberty, Golden Gate Bridge, Times Square)
+
+### What was built
+
+**Database** — [db/favorites.sql](db/favorites.sql)
+- `favorites (id, user_id, place_id, created_at)` — UNIQUE (user_id, place_id), both FKs cascade
+- Unique constraint makes "add favorite" naturally idempotent
+
+**Backend** — [server/routes/favorites.js](server/routes/favorites.js), mounted at `/api/favorites`
+
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/favorites` | Bearer + role=tourist | Full place objects for the current user's favorites (with review stats + favorited_at) |
+| GET | `/api/favorites/ids` | Bearer + role=tourist | Just the array of `place_id`s (lightweight, used by the frontend to decide which hearts to fill) |
+| POST | `/api/favorites` | Bearer + role=tourist | Add `{place_id}`. Idempotent via `INSERT ... ON DUPLICATE KEY UPDATE` |
+| DELETE | `/api/favorites/:placeId` | Bearer + role=tourist | Remove. Returns 200 + `{removed: 0 or 1}` |
+
+**Frontend**
+- [client/src/context/FavoritesContext.js](client/src/context/FavoritesContext.js) — loads the user's favorite place_ids as a `Set` on login, exposes `isFavorited(id)` O(1) lookup and `toggleFavorite(id)` with optimistic update + rollback on error
+- [client/src/components/FavoriteButton.js](client/src/components/FavoriteButton.js) — two variants:
+  - `overlay` (default) — floating circular heart on card images
+  - `inline` — pill-shaped "♡ Save" / "♥ Saved" button for the place detail page
+- [client/src/components/FavoritesPage.js](client/src/components/FavoritesPage.js) — `/favorites` route, shows the user's saved places using the existing `place-card` grid markup, reuses the heart overlay so you can unfavorite from this page too
+- Integration into existing place views:
+  - [HomePage.js](client/src/components/HomePage.js) — heart on featured place cards
+  - [CountryPage.js](client/src/components/CountryPage.js) — heart on all places in the country grid
+  - [PlaceDetail.js](client/src/components/PlaceDetail.js) — inline "♡ Save" button under the title
+- [App.js](client/src/App.js) — wrapped with `<FavoritesProvider>`, `/favorites` route is role=tourist protected
+- [Navbar.js](client/src/components/Navbar.js) — "♥ Favorites" link for tourists only
+
+### UX details
+
+- **Role-aware:** Guides and admins don't see the heart overlay (they're not the primary audience). If a logged-out user clicks a heart, they're redirected to `/login` with a `from` state so they return to where they were after auth.
+- **Optimistic updates:** The heart flips immediately on click; the server call happens in the background. On error, the heart flips back.
+- **Per-user data isolation:** Verified by test — two tourists see completely separate favorite lists.
+- **Animation:** Small pop scale transform when you favorite (300ms `fav-pop` keyframe).
+
+### Tests run (against live server on port 5000)
+
+| # | Scenario | Expected | Result |
+|---|---|---|---|
+| 1 | Add place 4 as Maya | 201 `{ok:true}` | ✅ |
+| 2 | Add place 4 again | 201 (idempotent, no duplicate) | ✅ |
+| 3 | List ids for Maya | `[4,5,8,10,16]` (5 favorites) | ✅ |
+| 4 | Full list returns joined place data | place name, city, country, rating | ✅ |
+| 5 | DELETE place 3 | `{ok:true, removed: 0}` (wasn't favorited) | ✅ |
+| 6 | Guide tries POST /api/favorites | 403 `"requires role: tourist"` | ✅ |
+| 7 | No token on GET /api/favorites/ids | 401 `"missing token"` | ✅ |
+| 8 | POST non-existent place (id 9999) | 404 `"place not found"` | ✅ |
+| 9 | John's ids ≠ Maya's ids (data isolation) | each tourist sees only their own | ✅ John: `[11,12,14]`, Maya: `[4,5,8,10,16]` |
+| 10 | Client compiles cleanly with all new components | ✅ | ✅ |
+
+### Files added / modified
+
+**Added**
+- `db/favorites.sql`
+- `server/routes/favorites.js`
+- `client/src/context/FavoritesContext.js`
+- `client/src/components/FavoriteButton.js`
+- `client/src/components/FavoritesPage.js`
+
+**Modified**
+- `server/index.js` (mount `/api/favorites`)
+- `client/src/App.js` (wrap in `FavoritesProvider`, `/favorites` route)
+- `client/src/components/Navbar.js` (Favorites link for tourists)
+- `client/src/components/HomePage.js` (heart on featured place cards)
+- `client/src/components/CountryPage.js` (heart on country place grid)
+- `client/src/components/PlaceDetail.js` (inline Save button)
+- `client/src/index.css` (~90 lines — `.fav-btn-overlay`, `.fav-btn-inline`, `.favorites-page`, `fav-pop` keyframe)
+
+### Walk-through
+
+1. Log in as `maya@example.com` / `password123` — you'll land on `/`
+2. Scroll to "Featured Destinations" — you'll see ♥ on Everest Base Camp, Phewa Lake, Grand Canyon, Eiffel Tower (the 4 pre-seeded favorites)
+3. Click any ♡ on a new place — it flips to ♥ with a pop animation (server call is optimistic)
+4. Click **♥ Favorites** in the navbar → you see your 5 saved places
+5. Click a ♥ on one of the cards on `/favorites` → it disappears from the list (and is unfavorited everywhere else too)
+6. Log out, log in as `priya@example.com` (guide) → hearts are hidden (guides don't favorite places)
+
+### What this unlocks next
+
+- "Trending" — rank places by favorite count across all users
+- "People also liked" — recommend places favorited by users who liked what you liked
+- Email digest: weekly email to tourists with new places similar to their favorites
+- Share a favorites list (public link with `?share=<token>`)
+
+---
+
 ## Update 5 — Admin Panel (2026-04-19)
 
 Full site administration at `/admin`. New `admin` role, a 5-tab dashboard, and guide verification. Self-registration as admin is blocked (only seeded or promoted by another admin).

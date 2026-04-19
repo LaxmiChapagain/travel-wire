@@ -14,6 +14,7 @@ const authRouter = require('./routes/auth');
 const guidesRouter = require('./routes/guides');
 const conversationsRouter = require('./routes/messages');
 const adminRouter = require('./routes/admin');
+const favoritesRouter = require('./routes/favorites');
 
 const app = express();
 app.use(cors());
@@ -33,6 +34,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/guides', guidesRouter);
 app.use('/api/conversations', conversationsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/favorites', favoritesRouter);
 app.use('/api', uploadsRouter);
 
 // Health check endpoint
