@@ -78,11 +78,12 @@ router.get('/', async (_req, res) => {
     try {
         const [rows] = await pool.promise().query(
             `SELECT u.id, u.name,
-                    gp.bio, gp.languages, gp.location, gp.specialties, gp.hourly_rate
+                    gp.bio, gp.languages, gp.location, gp.specialties, gp.hourly_rate,
+                    COALESCE(gp.verified, FALSE) AS verified
              FROM users u
              LEFT JOIN guide_profiles gp ON gp.user_id = u.id
              WHERE u.role = 'guide'
-             ORDER BY u.created_at DESC`
+             ORDER BY COALESCE(gp.verified, FALSE) DESC, u.created_at DESC`
         );
         res.json(rows);
     } catch (err) {

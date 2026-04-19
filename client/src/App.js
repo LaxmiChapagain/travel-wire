@@ -11,6 +11,7 @@ import GuideDashboard from './components/GuideDashboard';
 import GuidesDirectory from './components/GuidesDirectory';
 import Messages from './components/Messages';
 import ConversationView from './components/ConversationView';
+import AdminPanel from './components/AdminPanel';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -48,6 +49,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ConversationView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminPanel />
                 </ProtectedRoute>
               }
             />

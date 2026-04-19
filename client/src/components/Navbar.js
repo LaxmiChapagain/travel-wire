@@ -74,6 +74,13 @@ export default function Navbar() {
                             </Link>
                         </li>
                     )}
+                    {isAuthenticated && user?.role === 'admin' && (
+                        <li>
+                            <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>
+                                ⚙️ Admin
+                            </Link>
+                        </li>
+                    )}
                     {(!isAuthenticated || user?.role === 'tourist') && (
                         <li>
                             <Link to="/guides" className={location.pathname === '/guides' ? 'active' : ''}>
@@ -123,13 +130,18 @@ export default function Navbar() {
                                 {user?.role === 'guide' && (
                                     <span className="role-badge role-badge-guide">🧭 Guide</span>
                                 )}
+                                {user?.role === 'admin' && (
+                                    <span className="role-badge role-badge-admin">⚙️ Admin</span>
+                                )}
                                 <span className={`dropdown-arrow ${userMenuOpen ? 'open' : ''}`}>▾</span>
                             </button>
                             <div className={`nav-dropdown-menu ${userMenuOpen ? 'open' : ''}`}>
                                 <div className="nav-user-email">
                                     <div>{user?.email}</div>
                                     <div className="nav-user-role">
-                                        {user?.role === 'guide' ? '🧭 Travel Guide' : '🧳 Tourist'}
+                                        {user?.role === 'admin' ? '⚙️ Admin'
+                                            : user?.role === 'guide' ? '🧭 Travel Guide'
+                                            : '🧳 Tourist'}
                                     </div>
                                 </div>
                                 <button className="nav-dropdown-item nav-logout" onClick={handleLogout}>

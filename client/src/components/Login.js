@@ -17,8 +17,10 @@ export default function Login() {
         setError('');
         try {
             const loggedInUser = await login(email, password);
-            const target = redirectFrom
-                || (loggedInUser?.role === 'guide' ? '/dashboard' : '/');
+            const roleHome =
+                loggedInUser?.role === 'admin' ? '/admin' :
+                loggedInUser?.role === 'guide' ? '/dashboard' : '/';
+            const target = redirectFrom || roleHome;
             navigate(target, { replace: true });
         } catch (err) {
             setError(err.message || 'Login failed');

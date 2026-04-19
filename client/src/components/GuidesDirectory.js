@@ -86,7 +86,10 @@ export default function GuidesDirectory() {
                         <div className="guide-card-top">
                             <div className="guide-avatar">{(g.name || '?').split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase()}</div>
                             <div className="guide-card-head">
-                                <h2 className="guide-name">{g.name}</h2>
+                                <h2 className="guide-name">
+                                    {g.name}
+                                    {g.verified ? <span className="verified-pill" title="Verified by Travel Wire"> ✓ Verified</span> : null}
+                                </h2>
                                 <div className="guide-location">📍 {g.location || 'Location not set'}</div>
                             </div>
                         </div>

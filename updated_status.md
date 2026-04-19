@@ -4,6 +4,115 @@ _Last updated: 2026-04-19_
 
 ---
 
+## Update 5 — Admin Panel (2026-04-19)
+
+Full site administration at `/admin`. New `admin` role, a 5-tab dashboard, and guide verification. Self-registration as admin is blocked (only seeded or promoted by another admin).
+
+### Login to try it
+
+**Admin:** `admin@example.com` / `password123`
+
+Log in → you'll be auto-routed to `/admin`. In the navbar you'll see a pink "⚙️ Admin" badge next to your name.
+
+### The 5 tabs
+
+1. **Overview** — 8 stat cards (tourists, guides, verified guides, admins, places, reviews, conversations, messages) + "Recent signups" table
+2. **Users** — searchable list with role filter; change any user's role inline (dropdown) or delete them. You can't demote or delete yourself (both guarded server- and client-side)
+3. **Guides** — list of all guides with a "Verify / Un-verify" toggle. Verified guides get a ✓ green pill on their public guide card, and float to the top of the `/guides` directory
+4. **Reviews** — all reviews (newest first) with place context, star rating, comment. Delete button per row
+5. **Messages** — read-only list of every conversation (tourist + guide names & emails, message count, last message, updated time) for moderation
+
+### What was built
+
+**Database** — [db/admin.sql](db/admin.sql)
+- `users.role` enum expanded: `('tourist', 'guide', 'admin')`
+- `guide_profiles.verified BOOLEAN NOT NULL DEFAULT FALSE`
+- Priya and Marie pre-verified as sample data
+
+**Backend** — [server/routes/admin.js](server/routes/admin.js), mounted at `/api/admin`
+- Entire router wrapped in `requireAuth + requireRole('admin')`
+- Self-protection: can't demote or delete own account
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/admin/stats` | Counts + 6 most recent signups for the Overview tab |
+| GET | `/api/admin/users?q=&role=` | Users list with optional name/email search + role filter |
+| PUT | `/api/admin/users/:id/role` | Change role. Blocks self-demote |
+| DELETE | `/api/admin/users/:id` | Delete user (cascades to conversations, messages, profile via FK). Blocks self-delete |
+| PUT | `/api/admin/guides/:id/verify` | Toggle `verified` on guide's profile (auto-creates profile row if missing) |
+| GET | `/api/admin/reviews` | All reviews with joined place info |
+| DELETE | `/api/admin/reviews/:id` | Remove a review |
+| GET | `/api/admin/conversations` | Recent conversations (tourist + guide names, message count, last message) |
+
+**Auth registration** — self-registration is capped to `tourist` / `guide`; `admin` is not in `VALID_ROLES`. Only admins (or the seed script) can create/promote admins.
+
+**Frontend** — [client/src/components/AdminPanel.js](client/src/components/AdminPanel.js)
+- Single component with internal tab state (5 sub-components: `Overview`, `Users`, `Guides`, `Reviews`, `MessagesMod`)
+- Tabs render as pill-buttons with active gradient
+- Tables sticky-header, hover highlight, busy-row dimming during mutations
+
+**Public side changes**
+- `/guides` directory now shows a "✓ Verified" pill on verified guides and sorts verified ones first
+- Navbar: admins see a "⚙️ Admin" link, pink "⚙️ Admin" role badge, and "⚙️ Admin" label in the user menu
+- Login redirects admins to `/admin` (tourist → `/`, guide → `/dashboard`, admin → `/admin`)
+
+### Safety guards
+
+- Role enum constrained at the DB layer — invalid roles rejected even if an API bypass were attempted
+- Self-protection: admin can't demote themselves (400) or delete themselves (400)
+- Role change validator rejects anything outside `['tourist', 'guide', 'admin']`
+- Every admin endpoint requires `role === 'admin'` in the JWT payload; tampered tokens fail signature check
+
+### Tests run (against live server on port 5000)
+
+| # | Scenario | Expected | Result |
+|---|---|---|---|
+| 1 | `GET /api/admin/stats` as admin | 200 with counts | ✅ `{tourists: 9, guides: 7, admins: 1, ...}` |
+| 2 | `GET /api/admin/stats` as tourist | 403 | ✅ `"requires role: admin"` |
+| 3 | `GET /api/admin/stats` no token | 401 | ✅ `"missing token"` |
+| 4 | `PUT /api/admin/guides/13/verify {verified: true}` | 200 + row updated | ✅ |
+| 5 | `PUT /api/admin/guides/13/verify {verified: false}` | 200 + row updated | ✅ |
+| 6 | `PUT /api/admin/users/17/role {role: "tourist"}` (self) | 400 | ✅ `"you can't demote yourself"` |
+| 7 | `DELETE /api/admin/users/17` (self) | 400 | ✅ `"you can't delete your own admin account"` |
+| 8 | `GET /api/admin/users?q=maya` | only matches | ✅ 1 result |
+| 9 | `GET /api/admin/users?role=admin` | only admins | ✅ 1 result |
+| 10 | Public `GET /api/guides` after verify | includes `verified: 0/1` flag | ✅ verified guides sort first |
+
+### Files added / modified
+
+**Added**
+- `db/admin.sql`
+- `server/routes/admin.js`
+- `client/src/components/AdminPanel.js`
+
+**Modified**
+- `server/index.js` (mount `/api/admin`)
+- `server/routes/guides.js` (include `verified` + sort verified first)
+- `client/src/App.js` (`/admin` route, admin-only)
+- `client/src/components/Navbar.js` (Admin link + badge)
+- `client/src/components/Login.js` (admin → `/admin`)
+- `client/src/components/GuidesDirectory.js` (verified pill)
+- `client/src/index.css` (~250 lines of admin panel styling)
+
+### Try the full admin flow in the browser
+
+1. Log in as **`admin@example.com`** / **`password123`** → auto-redirects to `/admin`
+2. **Overview**: see the 8 stat cards — Tourists 9, Guides 7, Verified 2, etc.
+3. **Users tab**: search for `priya` → change Priya's role dropdown to see the server reject self-demote attempts on your own row
+4. **Guides tab**: click **Verify** on Keshav → open a new tab to [/guides](http://localhost:3000/guides) → Keshav now shows the "✓ Verified" pill and moved to the top
+5. **Reviews tab**: browse all reviews, delete a test one
+6. **Messages tab**: see all 7 conversations with participant names and last-message previews
+
+### What this unlocks / future admin work
+
+- Bulk actions (select multiple users → change role / delete)
+- Audit log (every admin action writes to an `admin_logs` table)
+- Place / country CRUD from the admin panel (right now places are only seeded via SQL)
+- Suspend instead of delete (add a `users.active BOOLEAN` column)
+- Email notifications when a guide is verified
+
+---
+
 ## Update 4 — Contact feature: tourists ↔ guides messaging (2026-04-19)
 
 Tourists can browse guides and send them messages. Guides see incoming conversations in a shared inbox at `/messages`. Both sides reply in a real-time-feeling thread view.

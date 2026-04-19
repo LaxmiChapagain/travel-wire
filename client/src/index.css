@@ -2126,3 +2126,254 @@ img {
     .message-bubble { max-width: 85%; }
     .conversation-time { display: none; }
 }
+
+/* =============================================================
+   ADMIN PANEL
+   ============================================================= */
+
+.admin-panel {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 5rem;
+}
+
+.admin-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    background: rgba(15, 20, 35, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 0.35rem;
+    margin-bottom: 1.5rem;
+}
+.admin-tab {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.65rem 1.1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.admin-tab:hover { background: rgba(255, 255, 255, 0.05); }
+.admin-tab.active {
+    background: linear-gradient(135deg, #6366f1, #0ea5e9);
+    color: #fff;
+}
+
+.admin-body { color: #cbd5e1; }
+
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 2rem;
+}
+.admin-stat-card {
+    background: rgba(15, 20, 35, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.1rem 0.9rem;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.admin-stat-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+.admin-stat-emoji { font-size: 1.4rem; margin-bottom: 0.25rem; }
+.admin-stat-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1;
+}
+.admin-stat-label {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    margin-top: 0.35rem;
+}
+
+.admin-toolbar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+.admin-search {
+    background: rgba(10, 14, 26, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    min-width: 220px;
+}
+.admin-search:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.5);
+}
+.admin-count {
+    margin-left: auto;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.admin-table th,
+.admin-table td {
+    padding: 0.7rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    vertical-align: top;
+}
+.admin-table th {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(10, 14, 26, 0.5);
+    position: sticky;
+    top: 0;
+}
+.admin-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+.admin-table tbody tr.busy { opacity: 0.5; }
+.admin-table .mono {
+    font-family: 'SFMono-Regular', ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: #a5b4fc;
+}
+.review-cell {
+    max-width: 360px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #e2e8f0;
+}
+
+.role-pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+.role-pill.role-tourist {
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(14, 165, 233, 0.35);
+    color: #7dd3fc;
+}
+.role-pill.role-guide {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #c7d2fe;
+}
+.role-pill.role-admin {
+    background: rgba(236, 72, 153, 0.12);
+    border: 1px solid rgba(236, 72, 153, 0.4);
+    color: #f9a8d4;
+}
+
+.role-badge-admin {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(239, 68, 68, 0.25));
+    border: 1px solid rgba(236, 72, 153, 0.5);
+    color: #fbcfe8;
+}
+
+.role-select {
+    background: rgba(10, 14, 26, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.verified-pill {
+    display: inline-block;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
+.self-pill {
+    color: #64748b;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.admin-btn-primary,
+.admin-btn-secondary,
+.admin-btn-danger {
+    border: none;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.4rem 0.85rem;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+}
+.admin-btn-primary {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+}
+.admin-btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.admin-btn-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.admin-btn-danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.3);
+}
+.admin-btn-primary:hover,
+.admin-btn-secondary:hover {
+    transform: translateY(-1px);
+}
+.admin-btn-primary:disabled,
+.admin-btn-secondary:disabled,
+.admin-btn-danger:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+    .admin-table {
+        font-size: 0.82rem;
+    }
+    .admin-table th, .admin-table td {
+        padding: 0.55rem 0.5rem;
+    }
+    .review-cell { max-width: 200px; }
+}
