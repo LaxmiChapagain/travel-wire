@@ -11,6 +11,8 @@ const categoriesRouter = require('./routes/categories');
 const uploadsRouter = require('./routes/uploads');
 const countriesRouter = require('./routes/countries');
 const authRouter = require('./routes/auth');
+const guidesRouter = require('./routes/guides');
+const conversationsRouter = require('./routes/messages');
 
 const app = express();
 app.use(cors());
@@ -27,6 +29,8 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/countries', countriesRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/guides', guidesRouter);
+app.use('/api/conversations', conversationsRouter);
 app.use('/api', uploadsRouter);
 
 // Health check endpoint

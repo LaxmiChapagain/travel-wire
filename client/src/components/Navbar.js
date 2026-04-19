@@ -67,6 +67,27 @@ export default function Navbar() {
                             Home
                         </Link>
                     </li>
+                    {isAuthenticated && user?.role === 'guide' && (
+                        <li>
+                            <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
+                                Dashboard
+                            </Link>
+                        </li>
+                    )}
+                    {(!isAuthenticated || user?.role === 'tourist') && (
+                        <li>
+                            <Link to="/guides" className={location.pathname === '/guides' ? 'active' : ''}>
+                                Find a Guide
+                            </Link>
+                        </li>
+                    )}
+                    {isAuthenticated && (
+                        <li>
+                            <Link to="/messages" className={location.pathname.startsWith('/messages') ? 'active' : ''}>
+                                Messages
+                            </Link>
+                        </li>
+                    )}
                     <li className="nav-dropdown" ref={dropdownRef}>
                         <button
                             className={`nav-dropdown-trigger ${location.pathname.includes('/country') ? 'active' : ''}`}

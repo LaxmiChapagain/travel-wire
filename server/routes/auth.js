@@ -107,5 +107,16 @@ router.get('/me', requireAuth, async (req, res) => {
     }
 });
 
+function requireRole(...roles) {
+    return (req, res, next) => {
+        if (!req.user) return res.status(401).json({ error: 'authentication required' });
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ error: `this action requires role: ${roles.join(' or ')}` });
+        }
+        next();
+    };
+}
+
 module.exports = router;
 module.exports.requireAuth = requireAuth;
+module.exports.requireRole = requireRole;

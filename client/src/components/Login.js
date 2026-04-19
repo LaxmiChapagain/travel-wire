@@ -10,14 +10,16 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const redirectTo = location.state?.from || '/';
+    const redirectFrom = location.state?.from;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         try {
-            await login(email, password);
-            navigate(redirectTo, { replace: true });
+            const loggedInUser = await login(email, password);
+            const target = redirectFrom
+                || (loggedInUser?.role === 'guide' ? '/dashboard' : '/');
+            navigate(target, { replace: true });
         } catch (err) {
             setError(err.message || 'Login failed');
         }

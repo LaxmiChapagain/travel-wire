@@ -24,8 +24,8 @@ export default function Register() {
             return;
         }
         try {
-            await register(name, email, password, role);
-            navigate('/', { replace: true });
+            const createdUser = await register(name, email, password, role);
+            navigate(createdUser?.role === 'guide' ? '/dashboard' : '/', { replace: true });
         } catch (err) {
             setError(err.message || 'Registration failed');
         }

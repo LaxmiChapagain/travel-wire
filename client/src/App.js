@@ -7,6 +7,11 @@ import CountryPage from './components/CountryPage';
 import PlaceDetail from './components/PlaceDetail';
 import Login from './components/Login';
 import Register from './components/Register';
+import GuideDashboard from './components/GuideDashboard';
+import GuidesDirectory from './components/GuidesDirectory';
+import Messages from './components/Messages';
+import ConversationView from './components/ConversationView';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
@@ -21,6 +26,31 @@ export default function App() {
             <Route path="/place/:id" element={<PlaceDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute role="guide">
+                  <GuideDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/guides" element={<GuidesDirectory />} />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages/:id"
+              element={
+                <ProtectedRoute>
+                  <ConversationView />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
         <Footer />
