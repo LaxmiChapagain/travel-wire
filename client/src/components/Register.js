@@ -9,6 +9,7 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
+    const [role, setRole] = useState('tourist');
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
@@ -23,7 +24,7 @@ export default function Register() {
             return;
         }
         try {
-            await register(name, email, password);
+            await register(name, email, password, role);
             navigate('/', { replace: true });
         } catch (err) {
             setError(err.message || 'Registration failed');
@@ -42,6 +43,36 @@ export default function Register() {
                 {error && <div className="auth-error">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="auth-form">
+                    <div className="role-selector">
+                        <span className="auth-label-text">I am a…</span>
+                        <div className="role-options">
+                            <label className={`role-option ${role === 'tourist' ? 'selected' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="tourist"
+                                    checked={role === 'tourist'}
+                                    onChange={() => setRole('tourist')}
+                                />
+                                <span className="role-emoji">🧳</span>
+                                <span className="role-name">Tourist</span>
+                                <span className="role-desc">Explore and book travel guides</span>
+                            </label>
+                            <label className={`role-option ${role === 'guide' ? 'selected' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="guide"
+                                    checked={role === 'guide'}
+                                    onChange={() => setRole('guide')}
+                                />
+                                <span className="role-emoji">🧭</span>
+                                <span className="role-name">Travel Guide</span>
+                                <span className="role-desc">Offer tours and connect with tourists</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <label className="auth-label">
                         <span>Name</span>
                         <input

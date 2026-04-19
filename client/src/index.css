@@ -1517,3 +1517,89 @@ img {
 .auth-footer a:hover {
     text-decoration: underline;
 }
+
+/* =============================================================
+   ROLE SELECTOR (Register form) + role badges
+   ============================================================= */
+
+.role-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+.auth-label-text {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+.role-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+}
+.role-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.9rem 0.75rem;
+    background: rgba(10, 14, 26, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.role-option:hover {
+    border-color: rgba(255, 107, 107, 0.35);
+    transform: translateY(-1px);
+}
+.role-option.selected {
+    border-color: rgba(255, 107, 107, 0.6);
+    background: rgba(255, 107, 107, 0.08);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12);
+}
+.role-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.role-emoji {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+.role-name {
+    font-weight: 600;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+}
+.role-desc {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.3;
+}
+
+/* Navbar role badge (shown next to name for guides) */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+}
+.role-badge-guide {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(14, 165, 233, 0.25));
+    border: 1px solid rgba(99, 102, 241, 0.45);
+    color: #c7d2fe;
+}
+
+/* Role line inside user dropdown */
+.nav-user-role {
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: #a5b4fc;
+    font-weight: 500;
+}

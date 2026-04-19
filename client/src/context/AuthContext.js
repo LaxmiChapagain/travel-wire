@@ -42,13 +42,13 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
-    const register = useCallback(async (name, email, password) => {
+    const register = useCallback(async (name, email, password, role = 'tourist') => {
         setLoading(true);
         try {
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name, email, password, role }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'registration failed');

@@ -1,6 +1,68 @@
-# Travel Wire — Feature Update: Register & Login
+# Travel Wire — Feature Updates
 
-_Completed: 2026-04-19_
+_Last updated: 2026-04-19_
+
+## Update 2 — User roles: Tourist vs. Travel Guide (2026-04-19)
+
+Added a `role` discriminator on every user. Chosen at registration, stored in the DB, baked into the JWT, and displayed in the UI. This is the foundation for the future tourist-to-guide contact/booking flow.
+
+### Status: ✅ Done and verified
+
+| Area | Status |
+|---|---|
+| DB schema | ✅ `role ENUM('tourist','guide') NOT NULL DEFAULT 'tourist'` added; existing users backfilled to `tourist` |
+| Backend | ✅ Register accepts `role`, validates against allowlist, stores it; JWT payload + `/me` + register/login responses include `role` |
+| Frontend | ✅ Register form has two radio cards (🧳 Tourist / 🧭 Travel Guide) |
+| Navbar | ✅ Guides see a "🧭 Guide" badge next to their name; dropdown shows role label under email |
+| Tests | ✅ 6/6 scenarios passing (see below) |
+
+### What was built
+
+**Database**
+- [db/users.sql](db/users.sql) — schema updated to include the `role` column on a fresh install; migration note included as a comment for existing DBs
+- Migration applied to the running MAMP DB via:
+  ```sql
+  ALTER TABLE users ADD COLUMN role ENUM('tourist', 'guide') NOT NULL DEFAULT 'tourist';
+  ```
+
+**Backend — [server/routes/auth.js](server/routes/auth.js)**
+- `POST /api/auth/register` now accepts `{ name, email, password, role }` — `role` optional, defaults to `tourist`, rejects anything outside `['tourist', 'guide']`
+- `publicUser()` and `signToken()` now include `role`
+- `GET /api/auth/me` returns `role`
+
+**Frontend**
+- [client/src/context/AuthContext.js](client/src/context/AuthContext.js) — `register()` signature now takes optional `role` (defaults to `'tourist'`)
+- [client/src/components/Register.js](client/src/components/Register.js) — new role selector at the top of the form (two radio cards)
+- [client/src/components/Navbar.js](client/src/components/Navbar.js) — badge + role label in user menu
+- [client/src/index.css](client/src/index.css) — ~80 lines added for `.role-option`, `.role-badge-guide`, `.nav-user-role`
+
+### Tests run (against `http://localhost:5000`)
+
+| # | Scenario | Expected | Result |
+|---|---|---|---|
+| 1 | Register with `role: "guide"` | 201, user.role == "guide", JWT contains role | ✅ user id 3 created, token payload decodes to `{role: "guide"}` |
+| 2 | Register with `role: "tourist"` (explicit) | 201, role stored as tourist | ✅ user id 4 |
+| 3 | Register with role omitted | 201, defaults to tourist | ✅ user id 5, role = tourist |
+| 4 | Register with `role: "admin"` | 400, validation error | ✅ `{"error":"role must be one of: tourist, guide"}` |
+| 5 | Login as guide | 200, response includes role | ✅ |
+| 6 | `GET /me` with guide token | 200, user.role == "guide" | ✅ |
+
+**Seed guide account** (for testing the guide UI):
+- Email: `priya.guide@example.com`
+- Password: `guide123`
+
+### What this unlocks for the "contact travel guide" feature
+
+- JWT already carries `role`, so a future protected route can do `requireRole('guide')` in one line
+- Frontend already knows `user.role`, so you can branch the UI (e.g., show "Message" buttons only to tourists, show an "Inbox" tab only to guides)
+- Suggested next DB pieces when you build contact:
+  - `guide_profiles` table: `user_id FK`, bio, languages, location, hourly_rate, verified
+  - `conversations` + `messages` tables: `tourist_id`, `guide_id`, timestamps
+  - `bookings` table for the eventual booking flow
+
+---
+
+## Update 1 — Register & Login (2026-04-19)
 
 Added user authentication (register, login, session persistence) with JWT + bcrypt. All layers tested end-to-end.
 

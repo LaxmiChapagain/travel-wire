@@ -7,23 +7,32 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-me';
 const JWT_EXPIRES_IN = '7d';
+const VALID_ROLES = ['tourist', 'guide'];
 
 function signToken(user) {
-    return jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+    );
 }
 
 function publicUser(u) {
-    return { id: u.id, name: u.name, email: u.email, created_at: u.created_at };
+    return { id: u.id, name: u.name, email: u.email, role: u.role, created_at: u.created_at };
 }
 
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body || {};
+        const { name, email, password, role } = req.body || {};
         if (!name || !email || !password) {
             return res.status(400).json({ error: 'name, email, and password are required' });
         }
         if (password.length < 6) {
             return res.status(400).json({ error: 'password must be at least 6 characters' });
+        }
+        const normRole = role ? String(role).toLowerCase() : 'tourist';
+        if (!VALID_ROLES.includes(normRole)) {
+            return res.status(400).json({ error: `role must be one of: ${VALID_ROLES.join(', ')}` });
         }
         const normEmail = String(email).trim().toLowerCase();
 
@@ -34,10 +43,10 @@ router.post('/register', async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
         const [result] = await pool.promise().query(
-            'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-            [String(name).trim(), normEmail, hash]
+            'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+            [String(name).trim(), normEmail, hash, normRole]
         );
-        const [rows] = await pool.promise().query('SELECT id, name, email, created_at FROM users WHERE id = ?', [result.insertId]);
+        const [rows] = await pool.promise().query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [result.insertId]);
         const user = rows[0];
         const token = signToken(user);
         res.status(201).json({ token, user: publicUser(user) });
@@ -87,7 +96,7 @@ function requireAuth(req, res, next) {
 router.get('/me', requireAuth, async (req, res) => {
     try {
         const [rows] = await pool.promise().query(
-            'SELECT id, name, email, created_at FROM users WHERE id = ?',
+            'SELECT id, name, email, role, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
         if (rows.length === 0) return res.status(404).json({ error: 'user not found' });

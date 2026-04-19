@@ -99,10 +99,18 @@ export default function Navbar() {
                             >
                                 <span className="nav-user-avatar">{initials || '👤'}</span>
                                 <span className="nav-user-name">{user?.name}</span>
+                                {user?.role === 'guide' && (
+                                    <span className="role-badge role-badge-guide">🧭 Guide</span>
+                                )}
                                 <span className={`dropdown-arrow ${userMenuOpen ? 'open' : ''}`}>▾</span>
                             </button>
                             <div className={`nav-dropdown-menu ${userMenuOpen ? 'open' : ''}`}>
-                                <div className="nav-user-email">{user?.email}</div>
+                                <div className="nav-user-email">
+                                    <div>{user?.email}</div>
+                                    <div className="nav-user-role">
+                                        {user?.role === 'guide' ? '🧭 Travel Guide' : '🧳 Tourist'}
+                                    </div>
+                                </div>
                                 <button className="nav-dropdown-item nav-logout" onClick={handleLogout}>
                                     Log out
                                 </button>
